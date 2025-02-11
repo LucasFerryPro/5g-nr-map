@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polygon, Popup, Circle, useMapEvents } from 'react-leaflet';
 
-const TOMTOM_API_KEY = "RrGO4wlvJlzsKs2xRVAEcG2UqweDV4GM"; // Remplace avec ta vraie clé API TomTom
+const TOMTOM_API_KEY = "RrGO4wlvJlzsKs2xRVAEcG2UqweDV4GM";
 
 // Fonction pour récupérer les données Overpass
 const useOverpassData = async (query: string) => {
@@ -16,7 +16,7 @@ const useOverpassData = async (query: string) => {
 
     // Vérification de la réponse
     if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération des données : ${response.statusText}`);
+      throw new Error(`Error while fetching datas : ${response.statusText}`);
     }
 
     // Vérification si la réponse est du JSON
@@ -25,11 +25,11 @@ const useOverpassData = async (query: string) => {
       const data = JSON.parse(text);
       return data;
     } catch (error) {
-      console.error("Réponse non valide en JSON : ", text);
-      throw new Error("Réponse non valide en JSON");
+      console.error("JSON respons non valid ", text);
+      throw new Error("JSON respons non valid");
     }
   } catch (error) {
-    console.error("Erreur lors de la requête Overpass : ", error);
+    console.error("Error while request : ", error);
     throw error;
   }
 };
@@ -73,7 +73,6 @@ export default function Page() {
       `;
 
       try {
-        // Récupérer les données Overpass
         const roadResponse = await useOverpassData(roadQuery);
         const buildingResponse = await useOverpassData(buildingQuery);
         const densityResponse = await useOverpassData(densityQuery);
@@ -81,22 +80,19 @@ export default function Page() {
         setRoadData(roadResponse.elements);
         setBuildingData(buildingResponse.elements);
 
-        // Calcul de la densité de population
         const densityLevel = densityResponse.elements.length / 5; // Ajustement de l'échelle
         setDensityData(densityLevel);
 
-        // Récupérer la vitesse du trafic en temps réel
         await fetchTrafficData(lat, lon, densityLevel);
       } catch (error) {
-        console.error("Erreur lors de la récupération des données OSM : ", error);
+        console.error("Error fetching datas : ", error);
       }
     };
 
     fetchOSMData();
     console.log("fetchOSMData");
-  }, [location]); // Se déclenche à chaque changement de `location`
+  }, [location]);
 
-  // Récupération des données de trafic en temps réel via TomTom API
   const fetchTrafficData = async (lat: number, lon: number, density: number) => {
     try {
       const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${lat},${lon}&unit=KMPH&key=${TOMTOM_API_KEY}`;
@@ -112,7 +108,7 @@ export default function Page() {
         setBestConfig(config);
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération des données de trafic :", error);
+      console.error("Error getting datas :", error);
     }
   };
 
@@ -155,7 +151,7 @@ export default function Page() {
               positions={road.geometry.map((point: any) => [point.lat, point.lon])}
               pathOptions={{ color: 'blue' }}
             >
-              <Popup>Segment de route</Popup>
+              <Popup>Road segment</Popup>
             </Polygon>
           )
         ))}
@@ -168,7 +164,7 @@ export default function Page() {
               positions={building.geometry.map((point: any) => [point.lat, point.lon])}
               pathOptions={{ color: 'gray' }}
             >
-              <Popup>Bâtiment</Popup>
+              <Popup>Building</Popup>
             </Polygon>
           )
         ))}
@@ -180,29 +176,19 @@ export default function Page() {
             radius={densityData * 100}
             pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.4 }}
           >
-            <Popup>Densité de population estimée</Popup>
+            <Popup>Estimated population density</Popup>
           </Circle>
         )}
       </MapContainer>
 
       {/* Résultats de l'analyse */}
       <div className="mt-6 bg-white p-4 shadow-md rounded-md w-full max-w-lg text-center">
-        <h2 className="text-xl font-semibold">Configuration optimale du réseau 5G</h2>
+        <h2 className="text-xl font-semibold">5G optimal network settings</h2>
         {bestConfig ? (
           <p className="text-lg mt-2 text-blue-600">{bestConfig}</p>
         ) : (
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">Loading...</p>
         )}
-      </div>
-
-      {/* Affichage de la vitesse du trafic */}
-      <div className="mt-4 text-lg">
-        <strong>Vitesse du trafic :</strong> {trafficSpeed ? `${trafficSpeed.toFixed(2)} km/h` : 'Chargement...'}
-      </div>
-
-      {/* Affichage de la densité de population */}
-      <div className="mt-2 text-lg">
-        <strong>Densité de population estimée :</strong> {densityData ? `${densityData.toFixed(2)} habitants/km²` : 'Chargement...'}
       </div>
     </div>
   );
